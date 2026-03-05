@@ -57,7 +57,7 @@ You must install the packages for each service before running them:
 npm install
 cd engine && npm install && cd ..
 cd api && npm install && cd ..
-cd websocket && npm install && cd ..
+cd WebSoc && npm install && cd ..
 cd client && npm install && cd ..
 cd MarketMaker && npm install && cd ..
 cd db && npm install && cd ..
@@ -87,7 +87,7 @@ cd engine && npm run dev
 cd api && npm run dev
 
 # Start the WebSocket Server
-cd websocket && npm run dev
+cd WebSoc && npm run dev
 
 # Start the Frontend
 cd client && npm run dev
