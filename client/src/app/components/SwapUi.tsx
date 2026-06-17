@@ -8,8 +8,7 @@ export function SwapUI({ market, userId }: { market: string; userId: string }) {
   const [quantity, setQuantity] = useState("0");
   const [activeTab, setActiveTab] = useState("buy");
   const [type, setType] = useState("limit");
-  const api_url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-
+  const api_url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/order` || "http://localhost:3000/api/v1/order";
 
   function makeOrder() {
     axios.post(api_url, {

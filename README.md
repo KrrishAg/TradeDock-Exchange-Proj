@@ -85,6 +85,9 @@ The DB scripts live in the `db/` service. Run them from there:
 ```bash
 cd db
 
+#build the db folder
+npm run build
+
 # Create the trades hypertable + kline (candle) materialized views
 npm run seed:db
 
