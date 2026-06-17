@@ -5,9 +5,9 @@ import { DbMessage } from "./types";
 const pgClient = new Client({
   user: "postgres",
   host: "localhost",
-  database: "postgres",
+  database: "tradedock",
   password: "mypass",
-  port: 5432,
+  port: 5433,
 });
 pgClient.connect();
 

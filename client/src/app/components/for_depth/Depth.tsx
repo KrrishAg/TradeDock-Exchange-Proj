@@ -5,7 +5,7 @@ import { getDepth, getTicker } from "../../utils/httpClient";
 import { BidTable } from "./BidTable";
 import { AskTable } from "./AskTable";
 import { WSClient } from "@/app/utils/RealTimeUtil";
-import { Depth, Ticker } from "@/app/utils/types";
+import type { Depth, Ticker } from "@/app/utils/types";
 
 export function Depth({ market }: { market: string }) {
   const [bids, setBids] = useState<[string, string][]>([]);

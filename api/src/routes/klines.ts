@@ -4,9 +4,9 @@ import express from "express";
 const pgClient = new Client({
   user: "postgres",
   host: "localhost",
-  database: "postgres",
+  database: "tradedock",
   password: "mypass",
-  port: 5432,
+  port: 5433,
 });
 pgClient.connect();
 
@@ -39,7 +39,7 @@ kLinesRouter.get("/", async (req, res) => {
       new Date(Number(endTime) * 1000),
       symbol,
     ]);
-    console.log("RES FROM KLINES_TABLE", result.rows);
+    console.log("RES FROM KLINES_TABLE -> ", result.rows);
 
     res.json(
       (result.rows as any[]).map((x: any) => [
@@ -48,7 +48,7 @@ kLinesRouter.get("/", async (req, res) => {
         x.high,
         x.low,
         x.close,
-      ])
+      ]),
     );
   } catch (error) {
     console.log(error);

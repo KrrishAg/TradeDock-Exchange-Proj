@@ -8,9 +8,11 @@ export function SwapUI({ market, userId }: { market: string; userId: string }) {
   const [quantity, setQuantity] = useState("0");
   const [activeTab, setActiveTab] = useState("buy");
   const [type, setType] = useState("limit");
+  const api_url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+
 
   function makeOrder() {
-    axios.post("http://localhost:3000/api/v1/order", {
+    axios.post(api_url, {
       market,
       price,
       quantity,
@@ -95,7 +97,7 @@ export function SwapUI({ market, userId }: { market: string; userId: string }) {
               </div>
               <div className="flex justify-end flex-row">
                 <p className="font-medium pr-2 text-xs text-baseTextMedEmphasis">
-                  ≈ {price * quantity} INR
+                  ≈ {+price * +quantity} INR
                 </p>
               </div>
               <div className="flex justify-center flex-row mt-2 gap-3">

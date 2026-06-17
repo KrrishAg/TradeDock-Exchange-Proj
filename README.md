@@ -13,6 +13,23 @@ Tradedock operates on a distributed, event-driven architecture designed for low 
 - **Websocket Server:** Manages persistent connections to clients for real-time price and trade broadcasts.
 - **API & DB:** Handles user authentication, asset balances, and historical data storage (PostgreSQL).
 
+
+### Services & Ports
+
+| Service | Folder | Port | Talks to |
+| :------ | :----- | :--- | :------- |
+| API | `api/` | **3000** | Redis, Postgres |
+| WebSocket server | `WebSoc/` | **3001** | Redis (pub/sub) |
+| Frontend | `client/` | **3002** | API (`3000`), WebSocket (`3001`) |
+| Engine | `engine/` | — (Redis only) | Redis |
+| DB worker | `db/` | — (→ Postgres `5432`) | Redis, Postgres |
+| Market Maker | `MarketMaker/` | — (→ API) | API |
+| Redis | docker | **6379** | — |
+| TimescaleDB | docker | **5432** | — |
+
+> ⚠️ The API and a default `next dev` both want port `3000`, so the frontend is run on `3002`
+> (see step 4). The client expects the API on `3000` and the WebSocket server on `3001`.
+
 ---
 
 ## 🚀 Core Features
@@ -42,19 +59,17 @@ Tradedock operates on a distributed, event-driven architecture designed for low 
 
 ### 1. Infrastructure Setup
 
-Start the core services (Redis, Database):
+Start the core infrastructure (Redis + TimescaleDB). The compose file lives in `docker/`:
 
 ```bash
-docker-compose up -d
+cd docker && docker-compose up -d && cd ..
 ```
 
 ### 2. Install Dependencies
 
-You must install the packages for each service before running them:
+There is **no root `package.json`** — each service is independent, so install per service:
 
 ```bash
-# Install root and individual service dependencies
-npm install
 cd engine && npm install && cd ..
 cd api && npm install && cd ..
 cd WebSoc && npm install && cd ..
@@ -65,32 +80,43 @@ cd db && npm install && cd ..
 
 ### 3. Database Initialization
 
-Seed the initial data and set up the analytics views:
+The DB scripts live in the `db/` service. Run them from there:
 
 ```bash
-# Seed users and assets
+cd db
+
+# Create the trades hypertable + kline (candle) materialized views
 npm run seed:db
 
-# Start the cron job to refresh materialized views for charts
+# In a separate terminal: refresh the chart views on an interval (leave running)
 npm run refresh:views
+
+cd ..
 ```
+
+> Note: `seed:db` only sets up the database **schema** (the `trades_db` hypertable and the
+> `klines_1m` / `klines_1h` / `klines_1w` views). Test users and starting balances are seeded
+> in-memory by the **engine** on first boot — see `engine/src/logic/market_logic.ts`.
 
 ### 4. Running the Services
 
-Open separate terminals for each component to keep track of logs:
+Open a separate terminal per component to keep the logs readable:
 
 ```bash
-# Start the Order Engine
+# Order Engine (consumes the Redis "messages" queue)
 cd engine && npm run dev
 
-# Start the API Service
+# API service  → http://localhost:3000
 cd api && npm run dev
 
-# Start the WebSocket Server
+# WebSocket server  → ws://localhost:3001
 cd WebSoc && npm run dev
 
-# Start the Frontend
-cd client && npm run dev
+# DB worker (consumes the Redis "db_process" queue)
+cd db && npm run dev
+
+# Frontend  → http://localhost:3002  (port 3000 is taken by the API)
+cd client && npm run dev -- -p 3002
 ```
 
 ## 🤖 Market Maker
@@ -123,8 +149,8 @@ The engine stores state in a local snapshot. For a clean slate:
 If you want to clear all trades and chart history:
 
 ```bash
-# Stop containers and remove volumes
-docker-compose down -v
+# Stop containers and remove volumes (compose file is in docker/)
+cd docker && docker-compose down -v && cd ..
 ```
 
 _(Warning: This will stop all services as they rely on Redis being active.)_

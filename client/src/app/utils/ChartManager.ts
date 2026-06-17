@@ -2,7 +2,6 @@ import {
   CandlestickSeries,
   ColorType,
   createChart as createLightWeightChart,
-  CrosshairMode,
   ISeriesApi,
   UTCTimestamp,
 } from "lightweight-charts";

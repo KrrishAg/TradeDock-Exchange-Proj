@@ -67,7 +67,7 @@ export default function Page() {
             </div>
             {/* third */}
             <div className="flex flex-col self-center lg:self-start w-[350px] lg:w-[250px]">
-              <SwapUI market={market} userId={data.user.userId} />
+              <SwapUI market={market} userId={(data.user as any).userId} />
             </div>
           </div>
         </div>

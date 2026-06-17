@@ -32,7 +32,7 @@ export class User {
   public addListners() {
     this.ws.on("message", (message: string) => {
       const msg: InMessage = JSON.parse(message);
-      console.log("MSG RECEIVED: ", msg);
+      console.log("MSG RECEIVED -> ", msg);
       if (msg.method === "SUBSCRIBE") {
         msg.params.forEach((s) =>
           SubscriptionManager.getInstance().subscribe(this.id, s)

@@ -345,6 +345,7 @@ export class Engine {
     userId: string,
     side: "buy" | "sell"
   ) {
+    console.log(fills);
     fills.forEach((fill) => {
       //each fill etting added as a sepasrate trade
       RedisManager.getInstance().pushMessage({

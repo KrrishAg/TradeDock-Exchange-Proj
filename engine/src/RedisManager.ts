@@ -3,6 +3,7 @@ import { createClient } from "redis";
 import { DbMessage } from "./types/toDb";
 import { MessageToApi } from "./types/toApi";
 import { WsMessage } from "./types/toWS";
+import { sourceMapsEnabled } from "process";
 
 export class RedisManager {
   private client: RedisClientType;
@@ -21,6 +22,7 @@ export class RedisManager {
   }
 
   public pushMessage(message: DbMessage) {
+    console.log("DB Message received: ",message);
     this.client.lPush("db_process", JSON.stringify(message));
   }
 

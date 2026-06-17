@@ -2,7 +2,7 @@ import axios from "axios";
 import { Depth, KLine, Ticker, Trade } from "./types";
 
 // const BASE_URL = "https://api.binance.com/api/v3";
-const BASE_URL = "http://localhost:3000/api/v1";
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1` || "http://localhost:3000/api/v1";
 
 export async function getTicker(market: string): Promise<Ticker> {
   const response = await axios.get(`${BASE_URL}/ticker?symbol=${market}`);

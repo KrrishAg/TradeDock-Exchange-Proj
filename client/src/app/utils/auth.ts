@@ -8,7 +8,8 @@ export const NEXT_AUTH = {
         userId: { label: "User ID", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req) {
+      //@ts-expect-error authorize giving red squigly
+      async authorize(credentials, ) {
         if (!credentials?.userId || !credentials?.password) {
           return null;
         }
@@ -29,6 +30,7 @@ export const NEXT_AUTH = {
   secret: "process.env.NEXTAUTH_SECRET",
   callbacks: {
     //Add the user Id to token
+    //@ts-expect-error abc
     async jwt({ token, user }) {
       if (user) {
         // console.log(user);
@@ -36,6 +38,7 @@ export const NEXT_AUTH = {
       }
       return token;
     },
+    //@ts-expect-error abc
     async session({ session, token }) {
       if (session.user) {
         session.user.userId = token.userId;

@@ -9,7 +9,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const res = await signIn("credentials", {
       userId,

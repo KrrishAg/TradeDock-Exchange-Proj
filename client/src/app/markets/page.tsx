@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { supportedMarkets } from "../utils/data";
 import { signOut } from "next-auth/react";
+import Image from "next/image";
 
 //list of markets
 
@@ -21,7 +22,7 @@ export default function Home() {
         {supportedMarkets.map((market) => (
           <Link key={market.name} href={`trade/${market.name}`}>
             <div className="bg-gray-800 p-10 h-40 rounded-lg flex gap-10 items-center space-x-4 cursor-pointer hover:bg-gray-700 transition-colors duration-200">
-              <img
+              <Image
                 src={market.icon}
                 alt={market.base}
                 className="w-20 h-20 rounded-full"

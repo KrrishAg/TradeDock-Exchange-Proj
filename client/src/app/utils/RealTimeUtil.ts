@@ -2,7 +2,7 @@ import { isUndefined } from "util";
 import { Depth, Ticker, Trade } from "./types";
 
 // export const BASE_URL = "wss://stream.binance.com:9443/ws";
-export const BASE_URL = "ws://localhost:3001";
+export const BASE_URL = process.env.NEXT_PUBLIC_WEBSOC_URL || "ws://localhost:3001";
 
 //creating a singleton, as dont want to create numtiple websocket connections
 export class WSClient {

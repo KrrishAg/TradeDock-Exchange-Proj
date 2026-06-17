@@ -1,7 +1,7 @@
 //asks: [price,size][]
 export const AskTable = ({ asks }: { asks: [string, string][] }) => {
   let currentTotal = 0;
-  asks.sort((a, b) => b[0] - a[0]);
+  asks.sort((a, b) => +b[0] - +a[0]);
 
   const relevantAsks = asks.reverse().slice(0, 15).reverse(); //this is because we want the asks for like the smallest price visible on screen
 
@@ -11,8 +11,8 @@ export const AskTable = ({ asks }: { asks: [string, string][] }) => {
     asksWithTotal.push([price, quantity, (currentTotal += Number(quantity))]);
   }
   const maxTotal = relevantAsks.reduce(
-    (acc, [_, quantity]) => acc + Number(quantity),
-    0
+    (acc, [, quantity]) => acc + Number(quantity),
+    0,
   );
 
   asksWithTotal.reverse();
