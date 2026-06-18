@@ -31,7 +31,7 @@ export class Engine {
     try {
       snapshot = fs.readFileSync("./snapshot.json");
     } catch (error) {
-      console.log("No snapshot found");
+      console.log("  No snapshot found, starting fresh");
     }
 
     //if the file already exists, that means my BE ran before, restore the previous state
@@ -44,16 +44,19 @@ export class Engine {
             o.bids,
             o.asks,
             o.lastTradeId,
-            o.currentPrice
-          )
+            o.currentPrice,
+          ),
       );
       this.balances = new Map(snapshotFromFile.balances);
+      console.log(
+        `  Restored from snapshot: ${this.orderbooks.length} orderbooks, ${this.balances.size} user balances`,
+      );
     } else {
       //otherwise start from the start
       this.orderbooks = SUPPORTED_MARKETS.map(
-        (m) => new OrderBook(m.split("_")[0], [], [], 0, 0)
+        (m) => new OrderBook(m.split("_")[0], [], [], 0, 0),
       );
-      console.log(this.orderbooks);
+      console.log("  Initialized orderbooks:", SUPPORTED_MARKETS.join(", "));
       setBaseBalances(this.balances);
     }
 
@@ -80,7 +83,7 @@ export class Engine {
     message: MessageFromApi;
     clientId: string;
   }) {
-    console.log("Message received from API: ", message);
+    console.log(`  Received ${message.type} (client ${clientId})`);
     switch (message.type) {
       case CREATE_ORDER:
         try {
@@ -89,7 +92,7 @@ export class Engine {
             message.data.quantity,
             message.data.price,
             message.data.side,
-            message.data.userId
+            message.data.userId,
           );
 
           RedisManager.getInstance().sendToApi(clientId, {
@@ -100,9 +103,8 @@ export class Engine {
               orderId,
             },
           });
-          console.log("Order created");
         } catch (error) {
-          console.log("ERROR while creating order: ", error);
+          console.error("  Failed to create order ->", error);
           RedisManager.getInstance().sendToApi(clientId, {
             type: "ORDER_CANCELLED",
             payload: {
@@ -119,10 +121,10 @@ export class Engine {
           const cancelMarket = message.data.market;
 
           const cancelOrderbook = this.orderbooks.find(
-            (xx) => xx.ticker() === cancelMarket
+            (xx) => xx.ticker() === cancelMarket,
           );
           if (!cancelOrderbook) {
-            console.log("No orderbook found");
+            console.warn("  Cancel failed: no orderbook for", cancelMarket);
             throw new Error("No orderbook found");
           }
 
@@ -130,7 +132,12 @@ export class Engine {
             cancelOrderbook?.asks.find((xx) => xx.orderId === orderId) ||
             cancelOrderbook?.bids.find((xx) => xx.orderId === orderId);
           if (!order) {
-            console.log("No such order Id found");
+            console.warn(
+              "  Cancel failed: no order",
+              orderId,
+              "in",
+              cancelMarket,
+            );
             throw new Error("No such order Id found");
           }
 
@@ -174,6 +181,7 @@ export class Engine {
             }
           }
 
+          console.log(`  Order cancelled: ${orderId} on ${cancelMarket}`);
           RedisManager.getInstance().sendToApi(clientId, {
             type: "ORDER_CANCELLED",
             payload: {
@@ -183,43 +191,46 @@ export class Engine {
             },
           });
         } catch (error) {
-          console.log("Error while cancelling the order");
-          console.log("ERROR", error);
+          console.error("  Failed to cancel order ->", error);
         }
       case GET_OPEN_ORDERS:
         try {
           const openOrderBook = this.orderbooks.find(
-            (xx) => xx.ticker() === message.data.market
+            (xx) => xx.ticker() === message.data.market,
           );
           if (!openOrderBook) throw new Error("No orderbook/market like that");
 
           const openOrders = openOrderBook.getOpenOrders(clientId);
-          console.log("Successfully fetched open orders");
+          console.log(
+            `  Open orders for ${message.data.market}: ${openOrders.length}`,
+          );
           RedisManager.getInstance().sendToApi(clientId, {
             type: "OPEN_ORDERS",
             payload: openOrders,
           });
         } catch (error) {
-          console.log("Error while fetching open orders: ", error);
+          console.error("  Failed to fetch open orders ->", error);
         }
         break;
       case GET_DEPTH:
         try {
           const OrderBook = this.orderbooks.find(
-            (xx) => xx.ticker() === message.data.market
+            (xx) => xx.ticker() === message.data.market,
           );
           if (!OrderBook) throw new Error("No orderbook/market like that");
 
           const depth = OrderBook.getDepth();
 
-          console.log("Succcessfully fetched depth");
+          console.log(
+            `  Depth for ${message.data.market}: ${depth.bids.length} bids, ${depth.asks.length} asks`,
+          );
 
           RedisManager.getInstance().sendToApi(clientId, {
             type: "DEPTH",
             payload: depth,
           });
         } catch (error) {
-          console.log("ERROR in getting the depth: ", error);
+          console.error("  Failed to get depth ->", error);
           RedisManager.getInstance().sendToApi(clientId, {
             type: "DEPTH",
             payload: {
@@ -247,7 +258,7 @@ export class Engine {
     quantity: string,
     price: string,
     side: "buy" | "sell",
-    userId: string
+    userId: string,
   ) {
     //first find the right orderbook
     const orderBook = this.orderbooks.find((xx) => xx.ticker() === market);
@@ -265,7 +276,7 @@ export class Engine {
       price,
       quantity,
       userId,
-      side
+      side,
     );
 
     //create the order object
@@ -291,7 +302,7 @@ export class Engine {
       quantity,
       userId,
       side,
-      fills
+      fills,
     );
     //update db about trades and orders
     this.createDbTrades(fills, market, userId, side);
@@ -301,7 +312,9 @@ export class Engine {
     this.publishWsTrades(market, userId, fills, side);
     this.publishWsDepthUpdates(fills, price, side, market);
     this.publishWsTicker(market, fills);
-    console.log("published ws ticker");
+    console.log(
+      `  Order matched: ${side} ${quantity} ${market} @ ${price} (user ${userId}) -> executedQty=${executedQty}, ${fills.length} fill(s)`,
+    );
 
     return { executedQty, fills, orderId: order.orderId };
   }
@@ -311,7 +324,7 @@ export class Engine {
     fills: Fill[],
     order: Order,
     executedQty: number,
-    market: string
+    market: string,
   ) {
     //adding the requested order i.e. the taker's order
     RedisManager.getInstance().pushMessage({
@@ -343,9 +356,8 @@ export class Engine {
     fills: Fill[],
     market: string,
     userId: string,
-    side: "buy" | "sell"
+    side: "buy" | "sell",
   ) {
-    console.log(fills);
     fills.forEach((fill) => {
       //each fill etting added as a sepasrate trade
       RedisManager.getInstance().pushMessage({
@@ -368,7 +380,7 @@ export class Engine {
     market: string,
     userId: string,
     fills: Fill[],
-    side: "buy" | "sell"
+    side: "buy" | "sell",
   ) {
     fills.forEach((fill) => {
       RedisManager.getInstance().publishMessage(
@@ -383,7 +395,7 @@ export class Engine {
             time: Date.now(),
             e: "trade",
           },
-        }
+        },
       );
     });
   }
@@ -398,7 +410,7 @@ export class Engine {
             lastPrice: fill.price,
             e: "24hrTicker",
           },
-        }
+        },
       );
     });
   }
@@ -423,7 +435,7 @@ export class Engine {
           a: updatedAsks.length ? updatedAsks : [[price, "0"]],
           e: "depthUpdate",
         },
-      }
+      },
     );
   }
 
@@ -432,7 +444,7 @@ export class Engine {
     fills: Fill[],
     price: string,
     side: "buy" | "sell",
-    market: string
+    market: string,
   ) {
     const orderBook = this.orderbooks.find((xx) => xx.ticker() === market);
     if (!orderBook) {
@@ -443,7 +455,6 @@ export class Engine {
     const depth = orderBook.getDepth();
 
     if (side === "buy") {
-      console.log(depth);
       //get the prices which are filling this buy order
       const filledPrices = fills.map((fill) => fill.price);
 
@@ -453,7 +464,6 @@ export class Engine {
       //if the og buy order is not yet completed, we need to tell the FE about it
       const updatedBid = depth.bids.find((x) => x[0] === price);
 
-      console.log("publish ws depth updates");
       RedisManager.getInstance().publishMessage(
         `${market.toLowerCase()}@depth@100ms`,
         {
@@ -463,14 +473,13 @@ export class Engine {
             b: depth.bids,
             e: "depthUpdate",
           },
-        }
+        },
       );
     } else {
       const filledPrices = fills.map((fill) => fill.price);
       const updatedBids = depth.bids.filter((x) => filledPrices.includes(x[0]));
       const updatedAsk = depth.asks.find((x) => x[0] === price);
 
-      console.log("publish ws depth updates");
       RedisManager.getInstance().publishMessage(
         `${market.toLowerCase()}@depth@100ms`,
         {
@@ -480,7 +489,7 @@ export class Engine {
             b: depth.bids,
             e: "depthUpdate",
           },
-        }
+        },
       );
     }
   }
@@ -494,7 +503,7 @@ export class Engine {
     quantity: string,
     userId: string,
     side: "buy" | "sell",
-    fills: Fill[]
+    fills: Fill[],
   ) {
     if (side === "buy") {
       fills.forEach((fill) => {
@@ -560,22 +569,19 @@ export class Engine {
     price: string,
     quantity: string,
     userId: string,
-    side: "buy" | "sell"
+    side: "buy" | "sell",
   ) {
     if (side === "buy") {
       //for a buy order, the user must have the sufficient money in their avl balance
-      console.log(
-        userId +
-          " " +
-          this.balances.get(userId) +
-          " " +
-          Number(price) * Number(quantity)
-      );
       if (
         (this.balances.get(userId)?.[quoteAsset]?.available || 0) <
         Number(price) * Number(quantity)
-      )
+      ) {
+        console.warn(
+          `  Insufficient ${quoteAsset} for user ${userId} (need ${Number(price) * Number(quantity)})`,
+        );
         throw new Error("Insufficient quote currency");
+      }
 
       //moving the money from avl to locked, so that dont use same omount on two assets
       //@ts-ignore
@@ -592,8 +598,12 @@ export class Engine {
       if (
         (this.balances.get(userId)?.[baseAsset]?.available || 0) <
         Number(quantity)
-      )
+      ) {
+        console.warn(
+          `  Insufficient ${baseAsset} for user ${userId} (need ${Number(quantity)})`,
+        );
         throw new Error("Insufficient base asset");
+      }
 
       //moving the asset from avl to locked
       //@ts-ignore
@@ -610,6 +620,7 @@ export class Engine {
 
   //depositing money (INR) into the exchange so that user can use it
   onRamp(userId: string, amount: number) {
+    console.log(`  On-ramp: +${amount} ${QUOTE_CURRENCY} for user ${userId}`);
     const userBalance = this.balances.get(userId);
     if (!userBalance) {
       this.balances.set(userId, {

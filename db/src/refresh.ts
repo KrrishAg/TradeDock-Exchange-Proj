@@ -3,7 +3,7 @@ import { Client } from "pg";
 const client = new Client({
   user: "postgres",
   host: "localhost",
-  database: "tradedock",
+  database: "postgres",
   password: "mypass",
   port: 5433,
 });
@@ -13,12 +13,12 @@ async function refreshViews() {
   await client.query("REFRESH MATERIALIZED VIEW klines_1m");
   await client.query("REFRESH MATERIALIZED VIEW klines_1h");
   await client.query("REFRESH MATERIALIZED VIEW klines_1w");
-
-  console.log("Materialized views refreshed successfully");
 }
 
-refreshViews().catch(console.error);
+refreshViews().catch((e) => console.error("[DB:refresh] Refresh failed ->", e));
 
 setInterval(() => {
-  refreshViews();
+  refreshViews().catch((e) =>
+    console.error("[DB:refresh] Refresh failed ->", e),
+  );
 }, 1000 * 10);

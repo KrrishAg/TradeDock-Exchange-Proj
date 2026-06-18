@@ -16,10 +16,13 @@ export default function Home() {
       password,
       redirect: false,
     });
-    // console.log(res);
     if (res && res.ok) {
+      console.log(`  Signed in as user ${userId}`);
       router.push("/markets");
-    } else setError("Error signing in");
+    } else {
+      console.error("  Sign-in failed for user", userId);
+      setError("Error signing in");
+    }
   }
 
   return (

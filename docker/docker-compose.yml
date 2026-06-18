@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mypass
-      POSTGRES_DB: tradedock
+      POSTGRES_DB: postgres
     volumes:
       - timescale-data:/var/lib/postgresql/data
 

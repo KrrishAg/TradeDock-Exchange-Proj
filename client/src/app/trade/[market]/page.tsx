@@ -26,8 +26,6 @@ export default function Page() {
 
   if (!data) return;
 
-  // console.log(data);
-
   return (
     <div className="flex flex-col lg:flex-row flex-1">
       <div className="flex flex-col flex-1">

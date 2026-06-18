@@ -6,8 +6,11 @@ export const orderRouter = express.Router();
 
 orderRouter.post("/", async (req, res) => {
   const { market, price, quantity, side, userId } = req.body;
-  console.log("Ordering -> ", price, market, quantity, side, userId);
+  console.log(
+    ` POST /order -> ${side} ${quantity} ${market} ${price} (user ${userId})`,
+  );
   if (price <= 0) {
+    console.warn(" /order rejected: non-positive price ->", price);
     return res.json({ message: "The price must be a positive number" });
   }
   const response = await RedisManager.getInstance().sendAndAwait({
@@ -20,13 +23,15 @@ orderRouter.post("/", async (req, res) => {
       userId,
     },
   });
-  // console.log(response);
+  console.log(
+    ` /order done`,
+  );
   res.json(response.payload);
 });
 
 orderRouter.delete("/", async (req, res) => {
   const { orderId, market } = req.body;
-  console.log("Deleting order -> ", orderId, market);
+  console.log(` DELETE /order -> orderId=${orderId} market=${market}`);
   const response = await RedisManager.getInstance().sendAndAwait({
     type: CANCEL_ORDER,
     data: {
@@ -39,7 +44,7 @@ orderRouter.delete("/", async (req, res) => {
 
 orderRouter.get("/open", async (req, res) => {
   const { userId, market } = req.query;
-  // console.log(userId, market);
+  console.log(` GET /order/open -> user=${userId} market=${market}`);
   const response = await RedisManager.getInstance().sendAndAwait({
     type: GET_OPEN_ORDERS,
     data: {

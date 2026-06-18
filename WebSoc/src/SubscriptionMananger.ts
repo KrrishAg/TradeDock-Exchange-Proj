@@ -9,7 +9,11 @@ export class SubscriptionManager {
 
   private constructor() {
     this.redisClient = createClient();
-    this.redisClient.connect();
+    this.redisClient.on("error", (e) => console.error("  Redis error ->", e));
+    this.redisClient
+      .connect()
+      .then(() => console.log("  Connected to Redis (pub/sub)"))
+      .catch((e) => console.error("  Redis connection failed ->", e));
   }
 
   public static getInstance() {
@@ -20,7 +24,7 @@ export class SubscriptionManager {
   public subscribe(userId: string, sub: string) {
     if (this.userToSubscriptions.get(userId)?.includes(sub)) return;
 
-    console.log("Subscribing user ", userId, "to ", sub);
+    console.log(`  User ${userId} subscribed to ${sub}`);
     //adding sub to the user
     if (!this.userToSubscriptions.has(userId)) {
       this.userToSubscriptions.set(userId, [sub]);
@@ -37,7 +41,7 @@ export class SubscriptionManager {
 
     //if a sub has been connected for the first time, need to CONNECT TO REDIS so that for any upcomibng msgs coming to this channel, we receive them
     if (this.subscriptionToUsers.get(sub)?.length === 1) {
-      // console.log("subscribing", sub);
+      console.log(`  Opening Redis channel: ${sub}`);
       this.redisClient.subscribe(sub, (message: string, channel: string) => {
         this.redisCallbackHandler(message, channel);
       });
@@ -51,18 +55,18 @@ export class SubscriptionManager {
     this.subscriptionToUsers
       .get(channel)
       ?.forEach((user) =>
-        UserManager.getInstance().getUser(user)?.emit(parsedMessage.data)
+        UserManager.getInstance().getUser(user)?.emit(parsedMessage.data),
       );
   }
 
   public unsubscribe(userId: string, sub: string) {
-    console.log("Unsubscribing user ", userId, "from ", sub);
+    console.log(`  User ${userId} unsubscribed from ${sub}`);
     //removing from userToSubscriptions
     const subscriptions = this.userToSubscriptions.get(userId);
     if (subscriptions) {
       this.userToSubscriptions.set(
         userId,
-        subscriptions?.filter((s) => s !== sub)
+        subscriptions?.filter((s) => s !== sub),
       );
       if (this.userToSubscriptions.get(userId)?.length === 0)
         this.userToSubscriptions.delete(userId);
@@ -73,10 +77,11 @@ export class SubscriptionManager {
     if (reverseSubscriptions) {
       this.subscriptionToUsers.set(
         sub,
-        reverseSubscriptions?.filter((u) => u !== userId)
+        reverseSubscriptions?.filter((u) => u !== userId),
       );
       if (this.subscriptionToUsers.get(sub)?.length === 0) {
         this.subscriptionToUsers.delete(sub);
+        console.log(`  Closing Redis channel (no subscribers left): ${sub}`);
         this.redisClient.unsubscribe(sub); //the extra step here is that if now no user is connected to this sub/channel, then npo point in getting updates, so unsubcscribe
       }
     }

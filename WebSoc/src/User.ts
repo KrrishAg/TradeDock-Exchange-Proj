@@ -15,33 +15,31 @@ export class User {
   }
 
   public subscribe(sub: string) {
-    console.log("Subscribing to: ", sub);
     this.subscriptions.push(sub);
   }
 
   public unsubscribe(sub: string) {
-    console.log("Unsubscribing from: ", sub);
     this.subscriptions = this.subscriptions.filter((x) => x !== sub);
   }
 
   public emit(message: OutMessage) {
-    console.log("Emitting message: ", message);
+    // No per-message log here: this fires on every trade/depth/ticker tick
+    // and would flood the logs. Subscribe/unsubscribe events are logged instead.
     this.ws.send(JSON.stringify(message));
   }
 
   public addListners() {
     this.ws.on("message", (message: string) => {
       const msg: InMessage = JSON.parse(message);
-      console.log("MSG RECEIVED -> ", msg);
       if (msg.method === "SUBSCRIBE") {
         msg.params.forEach((s) =>
-          SubscriptionManager.getInstance().subscribe(this.id, s)
+          SubscriptionManager.getInstance().subscribe(this.id, s),
         );
       }
 
       if (msg.method === "UNSUBSCRIBE") {
         msg.params.forEach((s) =>
-          SubscriptionManager.getInstance().unsubscribe(this.id, s)
+          SubscriptionManager.getInstance().unsubscribe(this.id, s),
         );
       }
     });

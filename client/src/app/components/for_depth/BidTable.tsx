@@ -4,7 +4,6 @@ export const BidTable = ({ bids }: { bids: [string, string][] }) => {
 
   const currBids = bids.slice(0, 15);
 
-  // console.log(currBids);
   const bidsWithTotal: [string, string, number][] = currBids.map(
     ([price, quantity]) => [
       price,

@@ -34,5 +34,7 @@ export function setBaseBalances(balances: Map<String, UserBalance>) {
 
     balances.set(user, userBal);
   });
-  console.log(balances);
+  console.log(
+    `  Seeded starting balances for users`,
+  );
 }

@@ -9,9 +9,14 @@ export class RedisManager {
 
   private constructor() {
     this.publisher = createClient();
-    this.publisher.connect();
     this.queue = createClient();
-    this.queue.connect();
+    this.publisher.on("error", (e) =>
+      console.error(" Redis (publisher) error ->", e),
+    );
+    this.queue.on("error", (e) => console.error(" Redis (queue) error ->", e));
+    Promise.all([this.publisher.connect(), this.queue.connect()])
+      .then(() => console.log(" Connected to Redis"))
+      .catch((e) => console.error(" Redis connection failed ->", e));
   }
 
   public static getInstance() {
@@ -26,7 +31,6 @@ export class RedisManager {
         this.publisher.unsubscribe(id);
         resolve(JSON.parse(message));
       });
-      // console.log({ cliendID: id, message });
       this.queue.lPush("messages", JSON.stringify({ clientId: id, message }));
     });
   }

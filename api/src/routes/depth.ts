@@ -6,13 +6,13 @@ export const depthRouter = Router();
 
 depthRouter.get("/", async (req, res) => {
   const { symbol } = req.query;
-  console.log("Getting depths for symbol -> ", symbol);
+  console.log(" GET /depth ->", symbol);
   const response = await RedisManager.getInstance().sendAndAwait({
     type: GET_DEPTH,
     data: {
       market: symbol as string,
     },
   });
-  console.log("DepthRouter response -> ", response);
+  const payload = response.payload as { bids?: unknown[]; asks?: unknown[] };
   res.json(response.payload);
 });

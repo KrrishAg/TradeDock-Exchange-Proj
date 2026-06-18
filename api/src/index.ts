@@ -17,5 +17,5 @@ app.use("/api/v1/order", orderRouter);
 app.use("/api/v1/klines", kLinesRouter);
 
 app.listen(3004, () => {
-  console.log("Server is running on port 3004");
+  console.log(" Server running on PORT 3004");
 });

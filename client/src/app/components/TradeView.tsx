@@ -7,7 +7,6 @@ export function TradeView({ market }: { market: string }) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartManagerRef = useRef<ChartManager>(null);
 
-  
   useEffect(() => {
     const init = async () => {
       let klineData: KLine[] = [];
@@ -16,12 +15,15 @@ export function TradeView({ market }: { market: string }) {
           market,
           "1m",
           Math.floor((new Date().getTime() - 1000 * 60 * 60 * 24 * 30) / 1000),
-          Math.floor(new Date().getTime() / 1000)
+          Math.floor(new Date().getTime() / 1000),
         );
       } catch (e) {
-        console.log("ERROR in KlINES", e);
+        console.error(
+          `  Failed to load klines for ${market}, chart can be empty ->`,
+          e,
+        );
       }
-  
+
       if (chartRef) {
         if (chartManagerRef.current) {
           chartManagerRef.current.destroy();
@@ -40,12 +42,12 @@ export function TradeView({ market }: { market: string }) {
           {
             background: "#0e0f14",
             color: "white",
-          }
+          },
         );
         chartManagerRef.current = chartManager;
       }
     };
-    
+
     init();
   }, [market, chartRef]);
 

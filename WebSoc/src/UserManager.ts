@@ -22,6 +22,7 @@ export class UserManager {
 
   private registerToDeleteOnCLose(id: string, ws: WebSocket) {
     ws.on("close", () => {
+      console.log(`Client ${id} disconnected`);
       this.Users.delete(id);
       SubscriptionManager.getInstance().userLeft(id);
     });

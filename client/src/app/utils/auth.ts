@@ -9,7 +9,7 @@ export const NEXT_AUTH = {
         password: { label: "Password", type: "password" },
       },
       //@ts-expect-error authorize giving red squigly
-      async authorize(credentials, ) {
+      async authorize(credentials) {
         if (!credentials?.userId || !credentials?.password) {
           return null;
         }
@@ -18,10 +18,9 @@ export const NEXT_AUTH = {
           avlUsers[credentials.userId] &&
           avlUsers[credentials.userId] === credentials.password
         ) {
-          // console.log("Came here11");
+          console.log(`  User ${credentials.userId} signed in`);
           return { userId: credentials.userId };
         } else {
-          // console.log("Came here22");
           return null;
         }
       },
@@ -33,7 +32,6 @@ export const NEXT_AUTH = {
     //@ts-expect-error abc
     async jwt({ token, user }) {
       if (user) {
-        // console.log(user);
         token.userId = user.userId;
       }
       return token;

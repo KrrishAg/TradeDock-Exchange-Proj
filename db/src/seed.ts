@@ -3,13 +3,14 @@ import { Client } from "pg";
 const client = new Client({
   user: "postgres",
   host: "localhost",
-  database: "tradedock",
+  database: "postgres",
   password: "mypass",
   port: 5433,
 });
 
 async function initializeDB() {
   await client.connect();
+  console.log("Connected to Postgres, creating tables and views...");
 
   await client.query(`
         DROP TABLE IF EXISTS trades_db;
@@ -69,4 +70,4 @@ async function initializeDB() {
   console.log("Database initialized successfully");
 }
 
-initializeDB().catch(console.error);
+initializeDB().catch((e) => console.error("db Initialization failed ->", e));

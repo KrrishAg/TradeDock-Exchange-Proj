@@ -2,7 +2,8 @@ import { isUndefined } from "util";
 import { Depth, Ticker, Trade } from "./types";
 
 // export const BASE_URL = "wss://stream.binance.com:9443/ws";
-export const BASE_URL = process.env.NEXT_PUBLIC_WEBSOC_URL || "ws://localhost:3001";
+export const BASE_URL =
+  process.env.NEXT_PUBLIC_WEBSOC_URL || "ws://localhost:3001";
 
 //creating a singleton, as dont want to create numtiple websocket connections
 export class WSClient {
@@ -29,20 +30,34 @@ export class WSClient {
 
   init() {
     this.ws.onopen = () => {
+      console.log("   Connected to", BASE_URL);
       this.initialized = true;
       this.bufferedMessages.forEach((message) => {
         this.ws.send(JSON.stringify(message));
       });
       this.bufferedMessages = [];
     };
+    this.ws.onerror = (event) => {
+      console.error(
+        "   Connection error -> is the WebSocket server running?",
+        event,
+      );
+    };
+    this.ws.onclose = () => {
+      console.warn("   Connection closed");
+      this.initialized = false;
+    };
     this.ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
+      let message;
+      try {
+        message = JSON.parse(event.data);
+      } catch (e) {
+        console.error("   Could not parse incoming message ->", event.data, e);
+        return;
+      }
       const type = message.e;
-      // console.log(type);
       if (this.callbacks[type]) {
-        // console.log("IN there");
         if (type === "24hrTicker") {
-          // console.log("YO", message);
           this.callbacks[type].forEach((xx) => {
             const newTicker: Partial<Ticker> = {
               lastPrice: message.lastPrice,
@@ -51,7 +66,6 @@ export class WSClient {
             xx.callback(newTicker);
           });
         } else if (type === "depthUpdate") {
-          // console.log("New Depth", message);
           this.callbacks[type].forEach((xx) => {
             const newDepth: Depth = {
               bids: message.b,
@@ -62,7 +76,6 @@ export class WSClient {
             xx.callback(newDepth);
           });
         } else if (type === "trade") {
-          // console.log(message);
           this.callbacks[type].forEach((xx) => {
             const newTrade: Trade = {
               id: message.tradeId,
@@ -71,7 +84,6 @@ export class WSClient {
               volume: message.qty,
               time: message.time,
             };
-            // console.log(newTrade);
 
             xx.callback(newTrade);
           });

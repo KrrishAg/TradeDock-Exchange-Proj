@@ -3,7 +3,6 @@ import { createClient } from "redis";
 import { DbMessage } from "./types/toDb";
 import { MessageToApi } from "./types/toApi";
 import { WsMessage } from "./types/toWS";
-import { sourceMapsEnabled } from "process";
 
 export class RedisManager {
   private client: RedisClientType;
@@ -11,7 +10,13 @@ export class RedisManager {
 
   constructor() {
     this.client = createClient();
-    this.client.connect();
+    this.client.on("error", (e) =>
+      console.error("  Redis (publisher) error ->", e),
+    );
+    this.client
+      .connect()
+      .then(() => console.log("Redis publisher connected"))
+      .catch((e) => console.error("Redis connection failed ->", e));
   }
 
   static getInstance() {
@@ -22,7 +27,7 @@ export class RedisManager {
   }
 
   public pushMessage(message: DbMessage) {
-    console.log("DB Message received: ",message);
+    console.log("pushing to DB queue:", message.type);
     this.client.lPush("db_process", JSON.stringify(message));
   }
 
